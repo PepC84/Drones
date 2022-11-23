@@ -20,8 +20,10 @@ boolean dPressed = false;
 boolean posDroneAngle = false;
 boolean negDroneAngle = false;
 int directionAngle = 0;
-  float droneDegrees =  0;
-  float droneRadians  = 0;
+  float droneDegrees = 0;
+  float droneRadians = radians(droneDegrees);
+  int   droneDegreesInt = int(droneDegrees);
+
 float droneXcoordinates = width/2;
 float droneYcoordinates = height/2;
 float square = random(width/4, width/2);
@@ -42,12 +44,17 @@ boolean drawLinesBoolean;
 
 boolean firstContact = false;
 int inByte;
-String inString; 
-String a123 = "123";
-String b456 = "456";
-String c789 = "789";
+String inString = null;
 boolean receivedContact = false;
 long timerSend = millis() - 7000;
+int value1 = 000;
+int value2 = 000;
+int value3 = 000;
+int sendValue1 = 000;
+int sendValue2 = 000;
+int sendValue3 = 000;
+
+          
 void setup() {
   size(1024,720, P3D);
  randomx[10] = 0; 
@@ -59,6 +66,9 @@ void setup() {
  
   printArray(Serial.list());
   port = new Serial(this, Serial.list()[1], 9600);
+  port.clear();
+  inString = port.readStringUntil('r');
+  inString = null;
 }
 void draw() {
 
@@ -92,13 +102,18 @@ if (drawLinesBoolean == true ) {
 
 if (sendStringVar == true) {
   
-    sendString();
+  
+    sendString(int(droneDegrees),int(456),int(999));
                            }
 if (firstContact == true )     
    {
-     
+     port.readStringUntil('r');
+     text(str(value1), 10,130);
+text(str(value2), 10,150);
+text(str(value3), 10,170);
+
         text(" Arduino Contactado ", 10,90);
-        
+        text("Received: " + inString, 10, 110);
         
    }
 if (firstContact == false) 
@@ -133,22 +148,31 @@ if (sPressed == true || wPressed == true|| dPressed == true || aPressed == true)
  
  
 }
-/// unfinished 
 
-if (port.available() > 0) {
-  inString = port.readStringUntil('\n');
+
+
  if(inString != null) {
  
    if( millis() - timeStampReceived > 50) {
-   print("inString =  ");
-   println(inString);
    timeStampReceived = millis();
                                           }
-                      }
+                          
+     if(inString.indexOf('j') ==  1) 
+     {
+       String value1String = inString.substring(3,6);
+       value1 = int(value1String);
+       String value2String = inString.substring(7,10);
+       value2 = int(value2String);
+       String value3String = inString.substring(11,14);
+       value3 = int(value3String);
+       
+     }
+                        }
                          }
             
-}
+
  
+
   void drawLines () {
 if (drawLinesBoolean == false) {
 
@@ -161,10 +185,17 @@ if (drawLinesBoolean == false) {
   }
   
 void droneAngleCalc () {
-  
+  if (droneDegrees >= 360) {
+    droneDegrees = droneDegrees - 360;
+  }
+  if (droneDegrees < 0) {
+   droneDegrees = droneDegrees + 360; 
+    
+  }
   
 // 1 stands for -1 and 2 stands for +1
 if (negDroneAngle == true) {
+  
   sendStringVar = true;
  droneDegrees = droneDegrees - 1;
  }
@@ -176,7 +207,7 @@ if (negDroneAngle == true) {
    droneRadians = radians(droneDegrees);
  
 }
- 
+
 void droneUpdate( float posx , float posy, float rad) {
  
   pushMatrix();
@@ -277,9 +308,15 @@ negDroneAngle = false;
                                                 }
                                   }
                                   
-void sendString() {
+void sendString( int a, int b , int c) {
+  
+  String sa = nf(a,3);
+  String sb = nf(b,3);
+  String sc = nf(c,3);
 
-  if (firstContact == true) {
+if (firstContact == true)
+{
+  
    if ( millis() - lastTime > timeStep )
    {
 
@@ -294,20 +331,20 @@ void sendString() {
   port.write(',');
  break;
     case 3:
-  port.write(a123);
+  port.write(sa);
  break;
     case 4:
  port.write(',');
  break;
     case 5:
-  port.write(b456);
+  port.write(sb);
  break;
     case 6:
  port.write(',');
   break;
     case 7:
 
- port.write(c789);
+ port.write(sc);
   break;
     case 8:
   port.write(',');
@@ -317,35 +354,35 @@ void sendString() {
   sendStringVar = false;
   stepSend = 0;
   timeStep = 10;
+  lastTime = millis();
   println("9end"); 
   port.write('e');
   break;
                  }
     }
+    
+  } else {
+    
+  }
+ }
+
+void serialEvent(Serial port ) {
+inString = port.readString();
+ 
+    if (inString.equals("A")) { //65 is A in ASCII
+     if (firstContact == false) {
+       firstContact = true;
+       port.buffer(15);
+       port.clear();
+    }
  }
 }
-void serialEvent(Serial port ) {
-  // read a byte from the serial port:
-  inByte = port.read();
-  if (receivedContact == false && firstContact == true && millis() - timerSend > 10000) {
-    port.write('B');
-    timerSend = millis();
-if (inByte == 'C') {
-  receivedContact = true;
-}
+int countDigits (int n) 
+{
+  int count = 0;
+  while (n != 0) {
+  n = n/10;
+  ++count;
   }
-  
-      if (inByte == 'A') {
-      receivedContact = false;
-    }
-    
-  if (firstContact == false) {
-    if (inByte == 'A') { 
-     port.clear();          // clear the serial port buffer
-
-      firstContact = true;    
-        
-    } 
-  }
-  
+  return count;
 }
