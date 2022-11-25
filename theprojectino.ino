@@ -1,11 +1,12 @@
-// h,000,000,000,e   header,note (1 (A) 2 (B) 3 (C) 4 (D) 5 (E) 6 (F) 7 (G)), octave(1,2,3,4,5,6,7,8,9), intermediate ( 0 (flat), 1 (natural) ,2 (sharp)),\n 
-// j,000,000,000,r arduino send
+// h,000,000,000,e ps send format
+// j,000,000,000,r arduino send format
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(7,8,9,10,11,12);
 
-
+#define switchPin 5
 #define echoPin 2
 #define trigPin 3
+
 
 long duration; 
 int distance; 
@@ -30,9 +31,15 @@ boolean firstContact = false;
 String  value1String;
 String  value2String;
 String  value3String;
+
 int distanceSend = distance;
+int value2Send;
+int value3Send;
+int value4Send;
+
 boolean enableSendString = false;
 long stringSendDelay = millis();
+
 void setup() {
 lcd.begin(16,2);
 lcd.print("baller");
@@ -45,7 +52,9 @@ establishContact();
 }
 
 void loop() {
-  
+  value2Send = 888;
+  value3Send = 777;
+  value4Send = 998;
   if (distance < 500) {
   distanceSend = distance;
   } else {
@@ -56,7 +65,7 @@ void loop() {
   stringSendDelay = millis();
  }
   if (enableSendString == true) {
-  sendString(distanceSend,123,456);
+  sendString(distanceSend,value2Send,value3Send, value4Send);
   }
 
   if (toggleVals == true) {
@@ -76,11 +85,6 @@ void loop() {
  lcd.setCursor(14,0);
  lcd.print('1');
  lcd.setCursor(0,0);
-//  if(  millis() - timeStampReceived > 50 ) {
- // Serial.print("I received: ");
-  //Serial.println(inString);
-   //             timeStampReceived = millis();
-//  }
 
  if (inString.startsWith("h") )                  //   si string inicia con  "h" es valida y guarda contenido en arreglo sa[]
      {  
@@ -93,6 +97,8 @@ void loop() {
           value2 =  value2String.toInt();
         value3String   =    inString.substring(10,13); 
           value3 =  value3String.toInt();
+
+          
           
 /*        Serial.print("v1 ");
          Serial.println(value1);
@@ -171,13 +177,13 @@ int countDigits(long n)
   }
   return count;
 }
-void sendString(int a, int b, int c) {
+void sendString(int a, int b, int c, int d) {
   enableSendString = false;
-    char buffer[11];
-    sprintf(buffer, "j,%03d,%03d,%03d,r " , distanceSend, b, c);
-  Serial.write(buffer);
-  lcd.setCursor(8,0);
-  lcd.print(value3);
+    char buffer[16];
+    sprintf(buffer, "j,%03d,%03d,%03d,r" , distanceSend, value2Send, value3Send);
+  Serial.print(buffer);
+  lcd.setCursor(12,0);
+  lcd.print('j');
   lcd.setCursor(0,0);
   enableSendString = false;
 }
