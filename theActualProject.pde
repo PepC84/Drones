@@ -1,3 +1,4 @@
+
 import processing.serial.*;
 Serial port;
 
@@ -38,8 +39,6 @@ float rvalposx = 0;
 float rvalposy = 0;
 float rValx = 0;
 float rValy = 0;
-char [] key_lookup = {'L','l', ']', '}'};
-boolean[] keys = { false, false,false,false};
 boolean drawLinesBoolean;
 
 boolean firstContact = false;
@@ -50,12 +49,34 @@ long timerSend = millis() - 7000;
 int value1 = 000;
 int value2 = 000;
 int value3 = 000;
+int value4 = 000;
 int sendValue1 = 000;
 int sendValue2 = 000;
 int sendValue3 = 000;
-
-          
+float droneActualXCoordinates;
+float droneActualYCoordinates;
+int value1Display;
+int[][] pixelStates;
+int state;
+boolean firstL = false;
+int desiredCOM = 1; // arduino's COM
+float droneHeight = 70;
+boolean posDroneHeight = false;
+boolean negDroneHeight = false;
+boolean droneMoving = false;
+ color R = color(255,0,0);  
+ long lastMoved = millis();
+ float droneBufferX = dronePosX;
+ float droneBufferY = dronePosY;
+ float droneDifferenceX;
+ float droneDifferenceY;
+ float[] sinState;
+ float[] cosState;
+ long droneDegreesLong = int(droneDegrees);
+ int graphUpdater;
 void setup() {
+
+  pixelStates = new int[width][height];
   size(1024,720, P3D);
  randomx[10] = 0; 
  randomy[10] = 0; 
@@ -65,40 +86,104 @@ void setup() {
  timeStampReceived = millis();
  
   printArray(Serial.list());
-  port = new Serial(this, Serial.list()[1], 9600);
+  port = new Serial(this, Serial.list()[desiredCOM], 9600);
   port.clear();
   inString = port.readStringUntil('r');
   inString = null;
+  frameRate(400);
 }
 void draw() {
+  stroke(0);
+  
 
-  background(255);
-  fill(0,0,255);
+ 
+line(dronePosX,dronePosY,droneBufferX,droneBufferY);
+background(255,255,255);
+ // fill(0,0,255);
+droneActualXCoordinates = width/2 + dronePosX;
+droneActualYCoordinates = height/2 + dronePosY;
+    droneXcoordinates = width/2 - dronePosX;
+   droneYcoordinates = height/2 - dronePosY;
+ sendStringVar = true;
+fill(R);
+rect(25,width/2 -droneHeight/2,25,droneHeight);
+ pushMatrix();
+ translate(width/2 + dronePosX , height/2 + dronePosY);
+  rotateZ(droneRadians);
+  fill(R);
+  noStroke();
+rectMode(CENTER);
 
-   if   (keys[0] == false && keys[1] == false )  
-      {
+  rect(0, value1Display/2 , droneSizeX/10 ,value1Display);
+ 
+ smooth();
+  noStroke();
+  fill(255/3);
+  smooth();
+  noStroke();
+  fill(255/2);
+ rectMode(CENTER);
+  rect( 0,0  ,droneSizeX,droneSizeY);
+  
+rectMode(CENTER);
+  rect(0, 0 + droneSizeX/4, droneSizeX/2  , droneSizeY * 1.5 );
+ 
+popMatrix();
+  
+   text("main x: "+dronePosX + width/2 +" y: "+dronePosY+ height/2, 10, 30);
+   text("head x: "+dronePosX + droneSizeX/4 +" y: "+dronePosY , 10, 50);
+   text("Height: "+droneHeight , 10 , height/4 + height/2); 
+   pixelDraw(droneActualXCoordinates,droneActualYCoordinates,value1Display);
 
-       keys[0] = false;
-       keys[1] = false;
-       text("Select Mode Off", 10,70);
-      }
-  if   (keys[2] == true || keys[3] == true)  //debug
-       {
-       println("rads = " + droneRadians + " degrees ="+ droneDegrees);
-       keys[2] = false;
-       keys[3] = false;
-       }
-      if   (keys[0] == true || keys[1] == true)  
-        {
-        text("Select Mode On", 10,70);
-        drawLinesBoolean = true;
+  if (droneDegrees >= 360) {
+    droneDegrees = droneDegrees - 360;
+  }
+  if (droneDegrees < 0) {
+   droneDegrees = droneDegrees + 360; 
+  }
 
-       text("Select Mode Off", 10,70);
-         }
+if (droneHeight <= 10 || droneHeight > 500) { //when close to ground sensors detect being  around 2^11
+ text("Height near ground" , 10 , 240) ;
+  } 
+  if (droneHeight >= 250) {
+  text("Height near roof" , 10 , 240); 
+  }
+
+if (negDroneHeight == true) {
+  
+  sendStringVar = true;
+  if (droneHeight > 10 && droneHeight < 500) { //when close to ground sensors detect being  around 2^11
+ droneHeight = droneHeight - 1;
+  } 
+ }
+ if (posDroneHeight == true) {
+   sendStringVar = true;
+   if (droneHeight < 250) 
+ droneHeight = droneHeight + 1;
+ } 
+ 
+ 
+if (negDroneAngle == true) {
+  
+  sendStringVar = true;
+ droneDegrees = droneDegrees - 1;
+ droneDegreesLong--;
+
+ 
+ }
+ if (posDroneAngle == true) {
+   sendStringVar = true;
+ droneDegrees = droneDegrees + 1;
+  droneDegreesLong++;
+
+ }
+ 
+   droneRadians = radians(droneDegrees);
+
          
-if (drawLinesBoolean == true ) {
+
   drawLines();
-                               } 
+                               
 
 if (sendStringVar == true) {
   
@@ -122,33 +207,40 @@ if (firstContact == false)
     text(" Arduino no Contactado ", 10,90);
     }
 
- droneUpdate(dronePosX, dronePosY , droneRadians );
+
    text("x: "+mouseX+" y: "+mouseY, 10, 15);
-droneAngleCalc();
 
 
 
 
 if (sPressed == true || wPressed == true|| dPressed == true || aPressed == true) {
- if (sPressed == true) {
-   dronePosY = dronePosY + droneSpeed;
- }  
-  if (wPressed == true) {
-   dronePosY = dronePosY - droneSpeed;
- }  
-   if (dPressed == true) {
-   dronePosX = dronePosX + droneSpeed;
- }  
- if ( aPressed == true ) {
-   dronePosX = dronePosX - droneSpeed;
    
-   droneXcoordinates = width/2 - dronePosX;
-   droneYcoordinates = height/2 - dronePosY;
+ if ( sPressed == true && dronePosY < height/2) {
+   dronePosY = dronePosY + droneSpeed;
+  
+ }  
+  if ( wPressed == true && dronePosY > -height/2) {
+   dronePosY = dronePosY - droneSpeed;
+   
+ }  
+   if ( dPressed == true && dronePosX < width/2) {
+   dronePosX = dronePosX + droneSpeed;
+   
+ }  
+ if ( aPressed == true && dronePosX > -width/2) {
+   dronePosX = dronePosX - droneSpeed;
+  
  }
- 
- 
-}
+ }  
 
+if ( millis() - lastMoved > 2000 ) {
+ droneBufferY = dronePosY;
+ droneBufferX = dronePosX;
+}
+if (droneBufferX != dronePosX || droneBufferY != dronePosY) {
+  droneDifferenceX = abs(dronePosX - droneBufferX);
+  droneDifferenceY = abs(dronePosY - droneBufferY);
+}
 
 
  if(inString != null) {
@@ -157,22 +249,66 @@ if (sPressed == true || wPressed == true|| dPressed == true || aPressed == true)
    timeStampReceived = millis();
                                           }
                           
-     if(inString.indexOf('j') ==  1) 
+     if(inString.indexOf('j') >=  0 && inString != null) 
      {
-       String value1String = inString.substring(3,6);
+       int jpos = inString.indexOf('j');
+       println(inString);
+       String value1String = inString.substring(jpos +2,jpos+5);
        value1 = int(value1String);
-       String value2String = inString.substring(7,10);
+       String value2String = inString.substring(jpos + 6,jpos + 9);
        value2 = int(value2String);
-       String value3String = inString.substring(11,14);
-       value3 = int(value3String);
-       
+       String value3String = inString.substring(jpos + 10,jpos + 13);
+       value3 = int(value3String);;
+       value1Display = value1;
+       println(inString.indexOf('j'));
+       println(value1String);
+       if (value1 == 500) {
+         value1Display = width*2 + int(abs(dronePosX));
      }
-                        }
-                         }
-            
+     }
+     
+ }
+
+}
+
+void pixelDraw(float posx, float posy, int hypotenuse ) {
+  float cos = cos(radians(droneDegrees + 90)) * hypotenuse;
+  float sin = sin(radians(droneDegrees + 90)) * hypotenuse;
+  float pixelX = posx + cos;
+  float pixelY = posy  + sin;
 
  
 
+  text("pixelX = " + pixelX + "pixelY =" + pixelY , 40 , 200);
+  set(int(pixelX), int(pixelY), color(0,0,0));
+  text("ab", int(pixelX), int(pixelY));
+  text(droneDegrees,40,220);
+  if (pixelX < width && pixelY < height && pixelX > 0 && pixelY > 0) {
+  pixelStates[int(pixelX)][int(pixelY)] = 1;
+  }
+  for(int x=0; x<width; x++) {
+   for (int y=0; y<height; y++) {
+     if (pixelStates[x][y] >= 1 && pixelStates[x][y] < 255) {
+       
+       set(x,y,color(pixelStates[x][y]));
+       if (droneMoving == true) {
+       pixelStates[x][y]++;
+       }
+                                                            } 
+      if (pixelStates[x][y] == -1) {
+         set(x,y,0);
+          if (drawLinesBoolean == false); {
+            
+            pixelStates[x][y]--;
+          }
+       }
+       if (pixelStates[x][y] < -1 && pixelStates[x][y] > -225) {
+       set(x,y,abs(color(pixelStates[x][y])));
+       pixelStates[x][y]--;
+       }
+     }
+  }
+}
   void drawLines () {
 if (drawLinesBoolean == false) {
 
@@ -181,98 +317,63 @@ if (drawLinesBoolean == false) {
   
   
  text("Select Mode On", 10,70);
+ pixelStates[mouseX][mouseY] = -1;
   }
   }
   
-void droneAngleCalc () {
-  if (droneDegrees >= 360) {
-    droneDegrees = droneDegrees - 360;
-  }
-  if (droneDegrees < 0) {
-   droneDegrees = droneDegrees + 360; 
-    
-  }
-  
-// 1 stands for -1 and 2 stands for +1
-if (negDroneAngle == true) {
-  
-  sendStringVar = true;
- droneDegrees = droneDegrees - 1;
- }
- if (posDroneAngle == true) {
-   sendStringVar = true;
- droneDegrees = droneDegrees + 1;
- }
  
-   droneRadians = radians(droneDegrees);
- 
-}
 
-void droneUpdate( float posx , float posy, float rad) {
- 
-  pushMatrix();
-  translate(width/2 + posx , height/2 + posy );
-  rotateZ(rad);
-   color R = color(255,0,0);  
-  fill(R);
-  noStroke();
-rectMode(CENTER);
 
-  rect(0, width, droneSizeX/10 ,width * 2);
- 
- smooth();
-  noStroke();
-  fill(255/3);
-  smooth();
-  noStroke();
-  fill(255/2);
- rectMode(CENTER);
-  rect( 0,0  ,droneSizeX,droneSizeY);
-  
-rectMode(CENTER);
-  rect(0, 0 + droneSizeX/4, droneSizeX/2  , droneSizeY * 1.5 );
- 
-popMatrix();
-   text("main x: "+posx + width/2 +" y: "+posy+ height/2, 10, 30);
-   text("head x: "+posx + droneSizeX/4 +" y: "+posy , 10, 50);
-   
-}
+
 
 void keyPressed () {
-  keys (true);
-  if (key == 'w')
+if (key == 'l' || key == 'L') {
+  drawLinesBoolean = true;
+}
+  if (key == 'w' || key == 'W')
     {
       wPressed = true;
     }
-    else if (key == 's')
+    else if (key == 's' || key == 'S')
     {
        sPressed = true;
     }
-    else if (key == 'a')
+    else if (key == 'a' || key == 'A')
     {
        aPressed = true;
     }
-    else if (key == 'd')
+    else if (key == 'd' || key == 'D')
     {
        dPressed = true;
     }
     
   if (keyCode == RIGHT) {
     posDroneAngle = true;
-   droneAngleCalc();
+
+  }
+  if (keyCode == UP) {
+   posDroneHeight = true; 
   }
    if (keyCode == LEFT) {
-   droneAngleCalc(); 
+
    negDroneAngle = true;
   }
-
+  if (keyCode == DOWN) {
+   negDroneHeight = true; 
+  }
 }
   void keyReleased() {
-keys(false);
-    //spawn more rects
-    if (key == 'R' || key == 'r'); {
-                                         
-    }
+if (key == 'l' || key == 'L') {
+  drawLinesBoolean = true;
+  
+  if (firstL == true) {
+    drawLinesBoolean = false;
+    firstL = false;
+ } else {
+   firstL = true;
+ }
+
+}
     if (key == 'W' || key == 'w')   {
 
     wPressed = false;
@@ -289,25 +390,28 @@ keys(false);
 
     aPressed = false;
          } 
+         
     if (keyCode == RIGHT) {
-   droneAngleCalc();
+ 
 posDroneAngle = false;
                           }
-     if (keyCode == LEFT)   {
-   droneAngleCalc();
+     if (keyCode == LEFT) {
+
 negDroneAngle = false;
+                          }
+
+    if (keyCode == UP) {
+ 
+posDroneHeight = false;
+                          }
+     if (keyCode == DOWN)   {
+
+negDroneHeight = false;
 
                              }
 }
   
-  void keys(boolean pressedMaybe) {
-    for ( int i = 0; i < key_lookup.length; i++){
-      if( key == key_lookup[i] )    {
-        keys[i] = pressedMaybe;
-                                    }
-                                                }
-                                  }
-                                  
+                     
 void sendString( int a, int b , int c) {
   
   String sa = nf(a,3);
@@ -354,28 +458,34 @@ if (firstContact == true)
   sendStringVar = false;
   stepSend = 0;
   timeStep = 10;
-  lastTime = millis();
-  println("9end"); 
+  lastTime = millis(); 
   port.write('e');
   break;
                  }
     }
     
   } else {
-    
+   print("no"); 
   }
+    
+  
  }
 
 void serialEvent(Serial port ) {
 inString = port.readString();
- 
-    if (inString.equals("A")) { //65 is A in ASCII
+if (inString != null) {
+    if (inString.equals("A")) { 
      if (firstContact == false) {
        firstContact = true;
        port.buffer(15);
        port.clear();
     }
  }
+}
+}
+
+void mouseReleased() {
+
 }
 int countDigits (int n) 
 {
