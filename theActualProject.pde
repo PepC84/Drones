@@ -46,7 +46,7 @@ int inByte;
 String inString = null;
 boolean receivedContact = false;
 long timerSend = millis() - 7000;
-int value1 = 000;
+int value1 = 500;
 int value2 = 000;
 int value3 = 000;
 int value4 = 000;
@@ -64,7 +64,7 @@ float droneHeight = 70;
 boolean posDroneHeight = false;
 boolean negDroneHeight = false;
 boolean droneMoving = false;
- color R = color(255,0,0);  
+ color r = color(255,0,0);  
  long lastMoved = millis();
  float droneBufferX = dronePosX;
  float droneBufferY = dronePosY;
@@ -74,6 +74,7 @@ boolean droneMoving = false;
  float[] cosState;
  long droneDegreesLong = int(droneDegrees);
  int graphUpdater;
+ float droneBufferTotal;
 void setup() {
 
   pixelStates = new int[width][height];
@@ -90,13 +91,9 @@ void setup() {
   port.clear();
   inString = port.readStringUntil('r');
   inString = null;
-  frameRate(400);
 }
 void draw() {
   stroke(0);
-  
-
- 
 line(dronePosX,dronePosY,droneBufferX,droneBufferY);
 background(255,255,255);
  // fill(0,0,255);
@@ -105,12 +102,12 @@ droneActualYCoordinates = height/2 + dronePosY;
     droneXcoordinates = width/2 - dronePosX;
    droneYcoordinates = height/2 - dronePosY;
  sendStringVar = true;
-fill(R);
+fill(r);
 rect(25,width/2 -droneHeight/2,25,droneHeight);
  pushMatrix();
  translate(width/2 + dronePosX , height/2 + dronePosY);
   rotateZ(droneRadians);
-  fill(R);
+  fill(r);
   noStroke();
 rectMode(CENTER);
 
@@ -143,45 +140,40 @@ popMatrix();
   }
 
 if (droneHeight <= 10 || droneHeight > 500) { //when close to ground sensors detect being  around 2^11
- text("Height near ground" , 10 , 240) ;
+   text("Height near ground" , 10 , 240) ;
   } 
   if (droneHeight >= 250) {
-  text("Height near roof" , 10 , 240); 
+   text("Height near roof" , 10 , 240); 
   }
 
 if (negDroneHeight == true) {
-  
   sendStringVar = true;
-  if (droneHeight > 10 && droneHeight < 500) { //when close to ground sensors detect being  around 2^11
- droneHeight = droneHeight - 1;
+    if (droneHeight > 10 && droneHeight < 500) { //when close to ground sensors detect being  around 2^11
+    droneHeight = droneHeight - 1;
   } 
  }
  if (posDroneHeight == true) {
    sendStringVar = true;
-   if (droneHeight < 250) 
- droneHeight = droneHeight + 1;
+     if (droneHeight < 250) {
+      droneHeight = droneHeight + 1;
+      }
  } 
  
  
 if (negDroneAngle == true) {
-  
-  sendStringVar = true;
- droneDegrees = droneDegrees - 1;
- droneDegreesLong--;
-
- 
+   sendStringVar = true;
+   droneDegrees = droneDegrees - 1;
+   droneDegreesLong--; 
  }
+ 
  if (posDroneAngle == true) {
    sendStringVar = true;
- droneDegrees = droneDegrees + 1;
-  droneDegreesLong++;
+   droneDegrees = droneDegrees + 1;
+   droneDegreesLong++;
 
  }
  
    droneRadians = radians(droneDegrees);
-
-         
-
   drawLines();
                                
 
@@ -192,19 +184,17 @@ if (sendStringVar == true) {
                            }
 if (firstContact == true )     
    {
-     port.readStringUntil('r');
-     text(str(value1), 10,130);
-text(str(value2), 10,150);
-text(str(value3), 10,170);
-
-        text(" Arduino Contactado ", 10,90);
-        text("Received: " + inString, 10, 110);
+   port.readStringUntil('r');
+   text(str(value1), 10,130);
+   text(str(value2), 10,150);
+   text(str(value3), 10,170);
+    text(" Arduino Contactado ", 10,90);
+    text("Received: " + inString, 10, 110);
         
    }
 if (firstContact == false) 
     {
-      
-    text(" Arduino no Contactado ", 10,90);
+      text(" Arduino no Contactado ", 10,90);
     }
 
 
@@ -215,32 +205,41 @@ if (firstContact == false)
 
 if (sPressed == true || wPressed == true|| dPressed == true || aPressed == true) {
    
- if ( sPressed == true && dronePosY < height/2) {
+  if ( sPressed == true && dronePosY < height/2) {
    dronePosY = dronePosY + droneSpeed;
-  
- }  
+   }  
   if ( wPressed == true && dronePosY > -height/2) {
    dronePosY = dronePosY - droneSpeed;
    
- }  
-   if ( dPressed == true && dronePosX < width/2) {
+   }  
+  if ( dPressed == true && dronePosX < width/2) {
    dronePosX = dronePosX + droneSpeed;
    
- }  
- if ( aPressed == true && dronePosX > -width/2) {
+   }  
+  if ( aPressed == true && dronePosX > -width/2) {
    dronePosX = dronePosX - droneSpeed;
-  
- }
+   }
  }  
 
-if ( millis() - lastMoved > 2000 ) {
+if ( millis() - lastMoved > 500 ) {
  droneBufferY = dronePosY;
  droneBufferX = dronePosX;
-}
-if (droneBufferX != dronePosX || droneBufferY != dronePosY) {
+ lastMoved = millis();
+ float droneBufferSq;
+ droneBufferSq = sq(droneDifferenceX) + sq(droneDifferenceY);
+ droneBufferTotal = sqrt(droneBufferSq);
+ 
+
+} 
+
+
   droneDifferenceX = abs(dronePosX - droneBufferX);
   droneDifferenceY = abs(dronePosY - droneBufferY);
-}
+  text("DifferenceX" + droneDifferenceX,10,560);
+  text("DifferenceY" + droneDifferenceY,10,580);
+  text("Total Diff" + droneBufferTotal,10,600);
+  
+
 
 
  if(inString != null) {
@@ -262,9 +261,9 @@ if (droneBufferX != dronePosX || droneBufferY != dronePosY) {
        value1Display = value1;
        println(inString.indexOf('j'));
        println(value1String);
-       if (value1 == 500) {
-         value1Display = width*2 + int(abs(dronePosX));
-     }
+         if (value1 == 500) {
+           value1Display = width*2 + int(abs(dronePosX));
+           }
      }
      
  }
@@ -277,35 +276,33 @@ void pixelDraw(float posx, float posy, int hypotenuse ) {
   float pixelX = posx + cos;
   float pixelY = posy  + sin;
 
- 
-
   text("pixelX = " + pixelX + "pixelY =" + pixelY , 40 , 200);
   set(int(pixelX), int(pixelY), color(0,0,0));
   text("ab", int(pixelX), int(pixelY));
   text(droneDegrees,40,220);
-  if (pixelX < width && pixelY < height && pixelX > 0 && pixelY > 0) {
+  
+  if (pixelX < width && pixelY < height && pixelX > 0 && pixelY > 0 && int(value1) < 500) {
   pixelStates[int(pixelX)][int(pixelY)] = 1;
   }
   for(int x=0; x<width; x++) {
    for (int y=0; y<height; y++) {
-     if (pixelStates[x][y] >= 1 && pixelStates[x][y] < 255) {
+      if (pixelStates[x][y] >= 1 && pixelStates[x][y] < 255) {
        
        set(x,y,color(pixelStates[x][y]));
-       if (droneMoving == true) {
-       pixelStates[x][y]++;
-       }
-                                                            } 
-      if (pixelStates[x][y] == -1) {
-         set(x,y,0);
-          if (drawLinesBoolean == false); {
-            
-            pixelStates[x][y]--;
+       if(droneBufferTotal > 10) {
+      pixelStates[x][y] = pixelStates[x][y] + int(log((droneBufferTotal)));
+      }
+      }
+     if (pixelStates[x][y] == -1) {
+        set(x,y,0);
+          if (drawLinesBoolean == false) {
+            pixelStates[x][y] = pixelStates[x][y] + 2;
           }
        }
-       if (pixelStates[x][y] < -1 && pixelStates[x][y] > -225) {
-       set(x,y,abs(color(pixelStates[x][y])));
-       pixelStates[x][y]--;
-       }
+    //   if (pixelStates[x][y] != -255 && pixelStates[x][y] < -1) {
+    //   set(x,y,color(pixelStates[x][y] + 256));
+    //   pixelStates[x][y]++;
+    //   }
      }
   }
 }
@@ -484,9 +481,6 @@ if (inString != null) {
 }
 }
 
-void mouseReleased() {
-
-}
 int countDigits (int n) 
 {
   int count = 0;
