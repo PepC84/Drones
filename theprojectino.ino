@@ -42,7 +42,7 @@ long stringSendDelay = millis();
 
 void setup() {
 lcd.begin(16,2);
-lcd.print("baller");
+lcd.print("baller v1.2");
 
  pinMode(trigPin, OUTPUT); 
  pinMode(echoPin, INPUT); 
