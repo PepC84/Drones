@@ -1,4 +1,3 @@
-
 import processing.serial.*;
 Serial port;
 
@@ -251,7 +250,7 @@ if ( millis() - lastMoved > 500 ) {
      if(inString.indexOf('j') >=  0 && inString != null) 
      {
        int jpos = inString.indexOf('j');
-       println(inString);
+     
        String value1String = inString.substring(jpos +2,jpos+5);
        value1 = int(value1String);
        String value2String = inString.substring(jpos + 6,jpos + 9);
@@ -259,8 +258,7 @@ if ( millis() - lastMoved > 500 ) {
        String value3String = inString.substring(jpos + 10,jpos + 13);
        value3 = int(value3String);;
        value1Display = value1;
-       println(inString.indexOf('j'));
-       println(value1String);
+       
          if (value1 == 500) {
            value1Display = width*2 + int(abs(dronePosX));
            }
@@ -462,7 +460,7 @@ if (firstContact == true)
     }
     
   } else {
-   print("no"); 
+ //print("no"); 
   }
     
   
